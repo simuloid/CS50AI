@@ -12,7 +12,6 @@ people = {}
 # Maps movie_ids to a dictionary of: title, year, stars (a set of person_ids)
 movies = {}
 
-
 def load_data(directory):
     """
     Load data from CSV files into memory.
@@ -76,6 +75,7 @@ def main():
     else:
         degrees = len(path)
         print(f"{degrees} degrees of separation.")
+        print(path)
         path = [(None, source)] + path
         for i in range(degrees):
             person1 = people[path[i][1]]["name"]
@@ -83,6 +83,45 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
+
+def search(frontier, goal_state, visited):
+    iterations = 0
+    done = False
+    while not frontier.empty():
+        node = frontier.remove()
+        if node.state == goal_state:
+            done = True
+            # Make a list of (movie_id, person_id) pairs.
+            rc = []
+            while node.parent:
+                rc.append((node.action, node.state))
+                node = node.parent
+            rc.reverse()
+            return rc
+            print('found solution of length', len(rc),'after',iterations,'iterations')
+            print(rc)            
+            print("remaining frontier", len(frontier.frontier))
+            continue
+        if done:
+            continue
+        visited.add(node.state)
+        iterations += 1
+        for n in neighbors_for_person(node.state):
+            # n is (movie_id, person_id)
+            q = Node(n[1], node, n[0])
+            if n[1] == goal_state:
+                rc = []
+                while q.parent:
+                    rc.append((q.action, q.state))
+                    q = q.parent
+                rc.reverse()
+                return rc
+
+            else:
+                if n[1] not in visited:
+                    frontier.add(q)
+                
+    return None
 
 def shortest_path(source, target):
     """
@@ -92,8 +131,12 @@ def shortest_path(source, target):
     If no possible path, returns None.
     """
 
-    # TODO
-    raise NotImplementedError
+    print("Source:", source)
+    print("Target:", target)
+    frontier = QueueFrontier()
+    frontier.add(Node(source, None, None))
+    return search(frontier, target, set())
+
 
 
 def person_id_for_name(name):
