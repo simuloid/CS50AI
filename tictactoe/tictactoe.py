@@ -3,11 +3,13 @@ Tic Tac Toe Player
 """
 
 import math
+from copy import deepcopy
 
 X = "X"
 O = "O"
 EMPTY = None
 
+infinity = float('inf')
 
 def initial_state():
     """
@@ -40,7 +42,7 @@ def result(board, action):
     """
     if action[0] < 0 or action[0] > 2 or action[1] < 0 or action[1] > 2 or board[action[0]][action[1]]:
         raise Exception(str(action) + ' is not a valid move')
-    result = board.deepcopy()
+    result = deepcopy(board)
     result[action[0]][action[1]] = player(board)
     return result
 
@@ -88,8 +90,44 @@ def utility(board):
     return 1 if victor == X else (-1 if victor == O else 0)
 
 
+def min_ply(board):
+    if terminal(board):
+        return (utility(board), None)
+    
+    moves = actions(board)
+    best_score = infinity
+    best_move = None
+    for m in moves:
+        b = result(board, m)
+        score, _ = max_ply(b)
+        if score < best_score:
+            best_score = score
+            best_move = m
+
+    return (best_score, best_move)
+
+
+def max_ply(board):
+    if terminal(board):
+        return (utility(board), None)
+    
+    moves = actions(board)
+    best_score = -infinity
+    best_move = None
+    for m in moves:
+        b = result(board, m)
+        score, _ = min_ply(b)
+        if score > best_score:
+            best_score = score
+            best_move = m
+
+    return (best_score, best_move)
+    
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    raise NotImplementedError
+    if terminal(board):
+        return None
+    score, move = max_ply(board) if player(board) == X else min_ply(board)
+    return move
