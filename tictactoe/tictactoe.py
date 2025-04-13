@@ -90,7 +90,10 @@ def utility(board):
     return 1 if victor == X else (-1 if victor == O else 0)
 
 
-def min_ply(board):
+# alpha is the minimum score a maximizing player is assured of
+# beta is the maximum score a minimizing player is assured of
+
+def min_ply(board, alpha, beta):
     if terminal(board):
         return (utility(board), None)
     
@@ -99,7 +102,10 @@ def min_ply(board):
     best_move = None
     for m in moves:
         b = result(board, m)
-        score, _ = max_ply(b)
+        score, _ = max_ply(b, alpha, beta)
+        if best_score <= alpha:
+            break
+        beta = min(beta, score)
         if score < best_score:
             best_score = score
             best_move = m
@@ -107,7 +113,7 @@ def min_ply(board):
     return (best_score, best_move)
 
 
-def max_ply(board):
+def max_ply(board, alpha, beta):
     if terminal(board):
         return (utility(board), None)
     
@@ -116,7 +122,10 @@ def max_ply(board):
     best_move = None
     for m in moves:
         b = result(board, m)
-        score, _ = min_ply(b)
+        score, _ = min_ply(b, alpha, beta)
+        if best_score >= beta:
+            break
+        alpha = max(alpha, score)
         if score > best_score:
             best_score = score
             best_move = m
@@ -129,5 +138,5 @@ def minimax(board):
     """
     if terminal(board):
         return None
-    score, move = max_ply(board) if player(board) == X else min_ply(board)
+    score, move = max_ply(board, -infinity, infinity) if player(board) == X else min_ply(board, -infinity, infinity)
     return move
