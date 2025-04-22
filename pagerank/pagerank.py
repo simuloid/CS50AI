@@ -57,7 +57,11 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    if random.random() >= damping_factor or not corpus[page]:
+        return random.choice(list(corpus.keys()))
+
+    return random.choice(list(corpus[page]))
+    
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,9 +73,45 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    rc = {}
+    for page in corpus.keys():
+        rc[page] = 0
+    page = random.choice(list(corpus.keys()))
+    for i in range(n):
+        page = transition_model(corpus, page, damping_factor)
+        rc[page] += 1
+    for page in corpus.keys():
+        rc[page] /= n
+        
+    return rc
 
+def links_to(corpus, page):
+    rc = []
+    for p in corpus:
+#        if p != page:
+        if page in corpus[p]:
+            rc.append(p)
+    return rc
 
+def fix_corpus(corpus):
+    """
+    Find all pages with no links and create links to all pages.
+
+    Parameters
+    ----------
+    corpus : map of page onto set(pages)
+        The graph of web pages that link to other web pages.
+
+    Returns
+    -------
+    The corrected corpus
+
+    """
+    for p in corpus:
+        if not corpus[p]:
+            corpus[p] = corpus.keys()
+    return corpus
+            
 def iterate_pagerank(corpus, damping_factor):
     """
     Return PageRank values for each page by iteratively updating
@@ -81,7 +121,35 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    rc = {}
+    samples = 0
+    epsilon = 0.001
+    corpus = fix_corpus(corpus)
+    N = len(corpus)
+    # Initialize probability of all pages as equal.
+    for page in corpus:
+        rc[page] = 1/N
+
+    changed = True
+    while changed:
+        changed = False
+        updates = {}
+        for page in corpus:
+            prp = (1-damping_factor) / N
+            summation = 0
+            for i in links_to(corpus, page):
+                summation += rc[i]/len(corpus[i])
+                
+            prp += damping_factor * summation
+            updates[page] = prp
+
+        for page in corpus:            
+            if abs(updates[page] - rc[page]) > epsilon:
+                changed = True
+            rc[page] = updates[page]
+        
+    return rc
+
 
 
 if __name__ == "__main__":
