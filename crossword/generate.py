@@ -91,7 +91,8 @@ class CrosswordCreator():
         """
         self.enforce_node_consistency()
         self.ac3()
-        return self.backtrack(dict())
+        for solution in self.backtrack(dict()):
+            yield solution
 
     def enforce_node_consistency(self):
         """
@@ -237,17 +238,16 @@ class CrosswordCreator():
         If no assignment is possible, return None.
         """
         if self.assignment_complete(assignment):
-            return assignment
-        
-        v = self.select_unassigned_variable(assignment)
-        
-        for w in self.order_domain_values(v, assignment):
-            assignment[v] = w
-            if self.consistent(assignment):
-                return self.backtrack(assignment)
-
-        return None            
-
+            yield assignment
+        else:
+            v = self.select_unassigned_variable(assignment)
+            
+            for w in self.order_domain_values(v, assignment):
+                ac = { kee:val for kee,val in assignment.items() }
+                ac[v] = w
+                if self.consistent(ac):
+                    for result in self.backtrack(ac):
+                        yield result
 
 def main():
 
@@ -263,13 +263,11 @@ def main():
     # Generate crossword
     crossword = Crossword(structure, words)
     creator = CrosswordCreator(crossword)
-    assignment = creator.solve()
-
-    # Print result
-    if assignment is None:
-        print("No solution.")
-    else:
+    # creator.enforce_node_consistency()
+    # creator.ac3()
+    for assignment in creator.solve():
         creator.print(assignment)
+        print()
         if output:
             creator.save(assignment, output)
 
